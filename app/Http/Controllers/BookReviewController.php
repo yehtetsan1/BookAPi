@@ -8,32 +8,26 @@ use Illuminate\Support\Facades\Validator;
 
 class BookReviewController extends Controller
 {
-    public function bookReview(){
-        $bookReviewData = BookReview::all();
-        if($bookReviewData->empty()){
-            return 'No Data to Show';
+    public function index(){
+        $bookReviewList = BookReview::all()->toArray();
+        if($bookReviewList == []){
+            return response()->json('No Data To Show', 204);
         }else{
-            return $bookReviewData;
-
+            return response()->json($bookReviewList, 200);
         }
     }
 
     public function create(Request $request){
         $this->bookReviewValidator($request);
         $reviewData = $this->getReviewData($request);
-        BookReview::create($reviewData);
-        $bookReview = BookReview::get()->last();
-        return [
-            'Created Successfully',
-            $bookReview
-        ];
+        $bookReview = BookReview::create($reviewData);
+        return response()->json($bookReview,201);
     }
 
     public function delete(Request $request){
+        $this->validationForDelete($request);
         BookReview::where('id',$request->bookReviewId)->delete();
-        return [
-            'Deleted Successfully'
-        ];
+        return response()->json('Deleted Successfully!', 200);
     }
 
     public function update(Request $request){
@@ -41,11 +35,8 @@ class BookReviewController extends Controller
             'description' => $request->description
         ];
         BookReview::where('id',$request->id)->update($updateData);
-        $updatedData = BookReview::where('id',$request->id)->get();
-        return [
-            'updated Successfully',
-            $updatedData
-        ];
+        $updatedBookReview = BookReview::where('id',$request->id)->get();
+        return response()->json(['updated successfully',$updatedBookReview], 200);
     }
 
 
@@ -61,6 +52,14 @@ class BookReviewController extends Controller
                 'bookId' => 'required',
                 'description' => 'required'
             ])->validate();
+    }
+
+    private function validationForDelete($request){
+        Validator::make($request->all(),[
+            'bookReviewId' => 'required'
+        ],[
+            'bookReviewId.required' => 'need id to delete'
+        ])->validate();
     }
 
 }

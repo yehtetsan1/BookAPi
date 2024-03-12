@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\BookReview;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Book extends Model
 {
@@ -17,4 +20,7 @@ class Book extends Model
         'cover_url',
         'deleted_at.'
     ];
+    public function reviews():HasMany{
+        return $this->hasMany(BookReview::class);
+    }
 }

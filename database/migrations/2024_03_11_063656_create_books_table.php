@@ -1,8 +1,10 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
+use Carbon\Carbon;
+use App\Models\BookReview;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
@@ -13,13 +15,14 @@ return new class extends Migration
     {
         Schema::create('books', function (Blueprint $table) {
             $table->id();
-            $table->string('ISBN',100);
+            $table->string('ISBN',100)->unique();
             $table->string('author',100);
             $table->string('title',100);
             $table->double('price');
-            $table->string('cover_url',100);
-            $table->timestamp('deleted_at')->nullable();
-            $table->timestamps();
+            $table->string('cover_url',100)->nullable();
+            $table->dateTime('deleted_at')->nullable();
+            $table->dateTime('created_at')->default(Carbon::now());
+            $table->dateTime('updated_at')->default(Carbon::now());
         });
     }
 
@@ -30,4 +33,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('books');
     }
+
+
 };

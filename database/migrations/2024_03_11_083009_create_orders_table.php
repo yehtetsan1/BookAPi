@@ -1,8 +1,9 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
@@ -13,11 +14,13 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->integer('customer_id');
-            $table->double('amount');
-            $table->timestamp('date')->nullable();
-            $table->timestamp('deleted_at')->nullable();
-            $table->timestamps();
+            $table->unsignedBigInteger('customer_id');
+            $table->double('amount')->nullable();
+            $table->foreign('customer_id')->references('id')->on('customers');
+            $table->dateTime('date')->default(Carbon::now());
+            $table->dateTime('deleted_at')->nullable();
+            $table->dateTime('created_at')->default(Carbon::now());
+            $table->dateTime('updated_at')->default(Carbon::now());
         });
     }
 

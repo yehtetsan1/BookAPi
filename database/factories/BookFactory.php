@@ -21,7 +21,6 @@ class BookFactory extends Factory
             'author' => $this->faker->text(30),
             'title' => $this->faker->text(30),
             'price' => $this->faker->randomNumber(4),
-            'cover_url' => $this->faker->text(30),
         ];
     }
 }

@@ -7,24 +7,24 @@ use App\Models\Book;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
 {
-    public function order(Request $request){
-        $bookData = $this->getBookOrder($request);
+    public function create(Request $request){
+        $this->orderValidation($request);
+
+        $bookData = Book::where('id',$request->bookId)->first()->toArray();
         $order = $this->getOrderData($request,$bookData);
-        $orderData = Order::create($order)->get()->last()->toArray();
+        $orderData = Order::create($order);
         $orderDetail = $this->getOrderDetailsData($request,$orderData);
-        $orderDetailData = OrderDetail::create($orderDetail)->first();
-        return [
+        $orderDetailData = OrderDetail::create($orderDetail);
+
+        return response()->json([
             'order detail created successfully',
             $orderData,
             $orderDetailData
-        ];
-    }
-
-    private function getBookOrder($request){
-        return Book::where('id',$request->bookId)->first()->toArray();
+        ], 201);
     }
 
     private function getOrderData($request,$bookData){
@@ -41,5 +41,12 @@ class OrderController extends Controller
             'book_id' => $request->bookId,
             'qty' => $request->qty
         ];
+    }
+
+    private function orderValidation($request){
+        Validator::make($request->all(),[
+            'customerId' => 'required',
+            'bookId' => 'required'
+        ])->validate();
     }
 }
