@@ -22,6 +22,8 @@ return new class extends Migration
             $table->dateTime('deleted_at')->nullable();
             $table->dateTime('created_at')->default(Carbon::now());
             $table->dateTime('updated_at')->default(Carbon::now());
+            $table->index('order_id','index_order_id');
+            $table->index('book_id','index_book_id');
         });
     }
 

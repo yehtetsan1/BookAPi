@@ -20,6 +20,7 @@ return new class extends Migration
             $table->dateTime('deleted_at')->nullable();
             $table->dateTime('created_at')->default(Carbon::now());
             $table->dateTime('updated_at')->default(Carbon::now());
+            $table->index('name','index_name');
 
         });
     }

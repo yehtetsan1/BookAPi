@@ -15,12 +15,13 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('customer_id');
-            $table->double('amount')->nullable();
             $table->foreign('customer_id')->references('id')->on('customers');
+            $table->double('amount')->nullable();
             $table->dateTime('date')->default(Carbon::now());
             $table->dateTime('deleted_at')->nullable();
             $table->dateTime('created_at')->default(Carbon::now());
             $table->dateTime('updated_at')->default(Carbon::now());
+            $table->index('customer_id','index_customer_id');
         });
     }
 
