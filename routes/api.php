@@ -27,11 +27,12 @@ Route::post('/customers/update',[CustomerController::class,'update'])->name('cus
 
 Route::get('/books/list',[BookController::class,'index'])->name('book#list');
 Route::post('/books/create',[BookController::class,'create'])->name('book#create');
-Route::get('/books/delete',[BookController::class,'delete'])->name('book#delete');
-Route::get('/books/search/{key}',[BookController::class,'search'])->name('book#search');
+Route::post('/books/delete',[BookController::class,'delete'])->name('book#delete');
+Route::post('/books/search',[BookController::class,'search'])->name('book#search');
 Route::post('/books/update',[BookController::class,'update'])->name('book#update');
+Route::post('/books/image/upload',[BookController::class,'imageUpload'])->name('book#imageUpload');
 
-Route::get('/bookReviews/list',[BookReviewController::class,'index'])->name('bookReview#list');
+Route::post('/bookReviews/list',[BookReviewController::class,'index'])->name('bookReview#list');
 Route::post('/bookReviews/create',[BookReviewController::class,'create'])->name('bookReview#create');
 Route::get('/bookReviews/delete',[BookReviewController::class,'delete'])->name('bookReview#delete');
 Route::post('/bookReviews/update',[BookReviewController::class,'update'])->name('bookReview#update');

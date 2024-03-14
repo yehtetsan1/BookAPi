@@ -20,6 +20,7 @@ class Book extends Model
         'cover_url',
         'deleted_at.'
     ];
+    
     public function reviews():HasMany{
         return $this->hasMany(BookReview::class);
     }

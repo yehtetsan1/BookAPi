@@ -35,7 +35,11 @@ class CustomerController extends Controller
                 ->orWhere('address','like','%'.$key.'%')
                 ->orWhere('city','like','%'.$key.'%')
                 ->get();
-        return response()->json($searchData, 200);
+        if(empty($searchData->toArray())){
+            return response()->json('noData', 200);
+        }else{
+            return response()->json($searchData, 200);
+        }
     }
 
     public function update(Request $request){
@@ -66,4 +70,6 @@ class CustomerController extends Controller
             'id.required' => 'need id to delete'
         ])->validate();
     }
+
+
 }
