@@ -7,24 +7,30 @@ use App\Models\Book;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\Base\BaseController as BaseController;
 
-class OrderController extends Controller
+class OrderController extends BaseController
 {
     public function create(Request $request){
-        $this->orderValidation($request);
+        $validator = $this->orderValidation($request);
 
-        $bookData = Book::where('id',$request->bookId)->first()->toArray();
-        $order = $this->getOrderData($request,$bookData);
-        $orderData = Order::create($order);
-        $orderDetail = $this->getOrderDetailsData($request,$orderData);
-        $orderDetailData = OrderDetail::create($orderDetail);
-
-        return response()->json([
-            'order detail created successfully',
-            $orderData,
-            $orderDetailData
-        ], 201);
+        if($validator->fails()){
+          return $this->sendError('Cannot Create Order',$validator->errors());
+        }else{
+            $bookData = Book::where('id',$request->bookId)->first()->toArray();
+            $order = $this->getOrderData($request,$bookData);
+            $orderData = Order::create($order);
+            $orderDetail = $this->getOrderDetailsData($request,$orderData);
+            $orderDetailData = OrderDetail::create($orderDetail);
+            $responseData = [
+                $orderData,
+                $orderDetailData
+            ];
+            return $this->sendResponse($responseData,'Order Created');
+        }
     }
 
     private function getOrderData($request,$bookData){
@@ -44,9 +50,16 @@ class OrderController extends Controller
     }
 
     private function orderValidation($request){
-        Validator::make($request->all(),[
-            'customerId' => 'required',
-            'bookId' => 'required'
-        ])->validate();
+        return Validator::make($request->all(),[
+            'customerId' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {
+                                return $query->where('deleted_at',null);
+                            })],
+            'bookId' => ['required', Rule::exists('books', 'id')->where(function (Builder $query) {
+                            return $query->where('deleted_at',null);
+                        })],
+        ],[
+            'bookId.exists' => 'Book Not Found',
+            'customerId.exists' => 'Customer Not Found'
+        ]);
     }
 }

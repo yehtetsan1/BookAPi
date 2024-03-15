@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\BookReview;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -32,18 +33,26 @@ class BookReviewController extends BaseController
     }
 
     public function delete(Request $request){
-        $this->validationForDelete($request);
-        BookReview::where('id',$request->bookReviewId)->delete();
-        return response()->json('Deleted Successfully!', 200);
+        $validator = $this->validationForDelete($request);
+        if($validator->fails()){
+            return $this->sendError('Cannot Delete Book Review!',$validator->errors());
+        }else{
+            BookReview::where('id',$request->bookReviewId)->update(['deleted_at'=>Carbon::now()]);
+            $deletedBookReview = BookReview::where('id',$request->bookReviewId)->get();
+            return $this->sendResponse($deletedBookReview,'Book Review Deleted',$deletedBookReview->count());
+        }
     }
 
     public function update(Request $request){
-        $updateData = [
-            'description' => $request->description
-        ];
-        BookReview::where('id',$request->id)->update($updateData);
-        $updatedBookReview = BookReview::where('id',$request->id)->get();
-        return response()->json(['updated successfully',$updatedBookReview], 200);
+        $validator = $this->validationForUpdate($request);
+        if($validator->fails()){
+            return $this->sendError('Cannot Update Book Review!',$validator->errors());
+        }else{
+            $updateData = ['description' => $request->description];
+            BookReview::where('id',$request->bookReviewId)->update($updateData);
+            $updatedBookReview = BookReview::where('id',$request->bookReviewId)->get();
+            return $this->sendResponse($updatedBookReview,'Book Review Updated',$updatedBookReview->count());
+        }
     }
 
 
@@ -61,16 +70,29 @@ class BookReviewController extends BaseController
                               })],
                   'description' => 'required'
               ],[
-                'bookId.exists' => 'The book has been deleted',
+                'bookId.exists' => 'The Book Not Found',
               ]);
     }
 
     private function validationForDelete($request){
-        Validator::make($request->all(),[
-            'bookReviewId' => 'required'
+        return Validator::make($request->all(),[
+            'bookReviewId' => ['required', Rule::exists('book_reviews', 'id')->where(function (Builder $query) {
+                                    return $query->where('deleted_at',null);
+                              })],
         ],[
-            'bookReviewId.required' => 'need id to delete'
-        ])->validate();
+            'bookReviewId.exists' => 'Review Not Found!'
+        ]);
+    }
+
+    private function validationForUpdate($request){
+        return Validator::make($request->all(),[
+            'bookReviewId' => ['required', Rule::exists('book_reviews', 'id')->where(function (Builder $query) {
+                                    return $query->where('deleted_at',null);
+                              })],
+            'description' => 'required'
+        ],[
+            'bookReviewId.exists' => 'Review Not Found!'
+        ]);
     }
 
 }

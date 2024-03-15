@@ -2,52 +2,62 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\Customer;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\Base\BaseController as BaseController;
 
-class CustomerController extends Controller
+class CustomerController extends BaseController
 {
     public function index(){
-        $data = Customer::all();
-        if(empty($data)){
-            return response()->json($data, 204);
-        }else{
-            return response()->json($data, 200);
-        }
+        $customers = Customer::where('deleted_at',null)->get();
+        return $this->sendResponse($customers,'Customer List',$customers->count());
     }
 
     public function create(Request $request){
-        $this->customerValidation($request);
-        $newCustomer = $this->getData($request);
-        $createdCustomer = Customer::create($newCustomer);
-        return response()->json($createdCustomer, 201);
-    }
-
-    public function delete(Request $request){
-        $this->validationForDelete($request);
-        Customer::where('id',$request->id)->delete();
-        return response()->json('Deleted Successfully', 200);
-    }
-
-    public function search($key){
-        $searchData = Customer::where('name','like','%'.$key.'%')
-                ->orWhere('address','like','%'.$key.'%')
-                ->orWhere('city','like','%'.$key.'%')
-                ->get();
-        if(empty($searchData->toArray())){
-            return response()->json('noData', 200);
+        $validator = $this->customerCreateValidation($request);
+        if($validator->fails()){
+            return $this->sendError('Cannot Create Customer',$validator->errors());
         }else{
-            return response()->json($searchData, 200);
+            $newCustomer = $this->getData($request);
+            $createdCustomer = Customer::create($newCustomer);
+            return $this->sendResponse($createdCustomer,'Customer Created Successfully!',$createdCustomer->count());
         }
     }
 
+    public function delete(Request $request){
+        $validator = $this->validationForDelete($request);
+        if($validator->fails()){
+            return $this->sendError('Cannot Delete Customer',$validator->errors());
+        }else{
+            Customer::where('id',$request->customerId)->update(['deleted_at'=>Carbon::now()]);
+            $deletedCustomer = Customer::where('id',$request->customerId)->get();
+            return $this->sendResponse($deletedCustomer,'Customer Deleted Successfully!',$deletedCustomer->count());
+        }
+    }
+
+    public function search(Request $request){
+        $customers = Customer::where('name','like','%'.$request->key.'%')
+                ->orWhere('address','like','%'.$request->key.'%')
+                ->orWhere('city','like','%'.$request->key.'%')
+                ->get();
+        $searchedCustomers = $customers->where('deleted_at',null);
+        return $this->sendResponse($searchedCustomers,'Customers Search Result!',$searchedCustomers->count());
+    }
+
     public function update(Request $request){
-        $this->customerValidation($request);
-        $updateData = $this->getData($request);
-        Customer::where('id',$request->id)->update($updateData);
-        $updatedCustomer = Customer::where('id',$request->id)->get();
-        return response()->json(['updated successfully',$updatedCustomer], 200);
+        $validator = $this->customerUpdateValidation($request);
+        if($validator->fails()){
+            return $this->sendError('Cannot Update Customer',$validator->errors());
+        }else{
+            $updateData = $this->getData($request);
+            Customer::where('id',$request->customerId)->update($updateData);
+            $updatedCustomer = Customer::where('id',$request->customerId)->get();
+            return $this->sendResponse($updatedCustomer,'Customer Updated Successfully',$updatedCustomer->count());
+        }
 
     }
 
@@ -57,18 +67,30 @@ class CustomerController extends Controller
         'city' => $request->city];
     }
 
-    private function customerValidation($request){
-        Validator::make($request->all(),[
+    private function customerCreateValidation($request){
+        return Validator::make($request->all(),[
             'name' => 'required',
-        ])->validate();
+        ]);
+    }
+
+    private function customerUpdateValidation($request){
+        return Validator::make($request->all(),[
+            'customerId' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {
+                                return $query->where('deleted_at',null);
+                            })],
+        ],[
+            'customerId.exists' => 'Customer Not Found!'
+        ]);
     }
 
     private function validationForDelete($request){
-        Validator::make($request->all(),[
-            'id' => 'required'
+        return Validator::make($request->all(),[
+            'customerId' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {
+                                return $query->where('deleted_at',null);
+                            })],
         ],[
-            'id.required' => 'need id to delete'
-        ])->validate();
+            'customerId.exists' => 'Customer Not Found!'
+        ]);
     }
 
 

@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use App\Models\Book;
+use App\Models\BookReview;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Base\BaseController as BaseController;
-use Illuminate\Validation\Rule;
-use Illuminate\Database\Query\Builder;
 
 class BookController extends BaseController
 {
@@ -47,17 +48,17 @@ class BookController extends BaseController
     public function delete(Request $request){
 
         $validator = Validator::make($request->all(),[
-            'book_id' => ['required', Rule::exists('books', 'id')->where(function (Builder $query) {
-                return $query->where('deleted_at',null);
-            })]
-        ]);
+                        'book_id' => ['required', Rule::exists('books', 'id')->where(function (Builder $query) {
+                            return $query->where('deleted_at',null);
+                        })]
+                    ],['book_id.exists' => 'This book has already been deleted']);
         if($validator->fails()){
             return $this->sendError('Book Delete Failed',$validator->errors());
         }else{
-            $deleteData = ['deleted_at' => Carbon::now()];
-            Book::where('id',$request->book_id)->update($deleteData);
-            $deletedData = Book::where('id',$request->book_id)->get();
-            return $this->sendResponse($deletedData,'Book Deleted Successfully',$deletedData->count());
+            $deleteBookData = ['deleted_at' => Carbon::now()];
+            Book::where('id',$request->book_id)->update($deleteBookData);
+            $deletedBookData = Book::where('id',$request->book_id)->get();
+            return $this->sendResponse($deletedBookData,'Book Deleted Successfully',$deletedBookData->count());
         }
     }
 
@@ -159,6 +160,8 @@ class BookController extends BaseController
             'author' => 'required',
             'title' => 'required',
             'price' => 'required',
+        ],[
+            'book_id.exists' => 'Book Not Found'
         ]);
     }
 
@@ -169,6 +172,8 @@ class BookController extends BaseController
                             return $query->where('deleted_at',null);
                         })],
             'cover_url' => 'required|mimes:png,jpg,jpeg|max:4000'
+        ],[
+            'book_id.exists' => 'Book Not Found'
         ]);
     }
 }
