@@ -12,84 +12,104 @@ use App\Http\Controllers\Base\BaseController as BaseController;
 
 class CustomerController extends BaseController
 {
-    public function index(){
+    private function getData($request){
+        return $request->only(
+            'key',
+            'customer_id',
+            'name',
+            'address',
+            'city'
+        );
+    }
+
+    public function index(Request $request){
+        $searchKey = $this->getData($request);
         $customers = Customer::where('deleted_at',null)->get();
+        if(isset($searchKey['key'])){
+            $customers = Customer::where('name','like','%'.$searchKey['key'].'%')
+                ->orWhere('address','like','%'.$searchKey['key'].'%')
+                ->orWhere('city','like','%'.$searchKey['key'].'%')
+                ->get();
+        }
+        if(isset($searchKey['name'])){
+            $customers = Customer::where('name','like','%'.$searchKey['name'].'%')->get();
+        }
+        if(isset($searchKey['address'])){
+            $customers = Customer::where('address','like','%'.$searchKey['address'].'%')->get();
+        }
+        if(isset($searchKey['city'])){
+            $customers = Customer::where('city','like','%'.$searchKey['city'].'%')->get();
+        }
         return $this->sendResponse($customers,'Customer List',$customers->count());
     }
 
+
     public function create(Request $request){
-        $validator = $this->customerCreateValidation($request);
+        $data = $this->getData($request);
+        $validator = $this->customerCreateValidation($data);
         if($validator->fails()){
             return $this->sendError('Cannot Create Customer',$validator->errors());
         }else{
-            $newCustomer = $this->getData($request);
-            $createdCustomer = Customer::create($newCustomer);
-            return $this->sendResponse($createdCustomer,'Customer Created Successfully!',$createdCustomer->count());
+            $createCustomer = $validator->validated();
+            $createdCustomer = Customer::create($createCustomer);
+            return $this->sendResponse($createdCustomer,'Customer Created Successfully!');
         }
     }
+
 
     public function delete(Request $request){
-        $validator = $this->validationForDelete($request);
+        $data = $this->getData($request);
+        $validator = $this->validationForDelete($data);
         if($validator->fails()){
             return $this->sendError('Cannot Delete Customer',$validator->errors());
-        }else{
-            Customer::where('id',$request->customerId)->update(['deleted_at'=>Carbon::now()]);
-            $deletedCustomer = Customer::where('id',$request->customerId)->get();
-            return $this->sendResponse($deletedCustomer,'Customer Deleted Successfully!',$deletedCustomer->count());
         }
+        Customer::find($data['customer_id'])->delete();
+        return $this->sendResponse([],'Customer Deleted Successfully!');
     }
 
-    public function search(Request $request){
-        $customers = Customer::where('name','like','%'.$request->key.'%')
-                ->orWhere('address','like','%'.$request->key.'%')
-                ->orWhere('city','like','%'.$request->key.'%')
-                ->get();
-        $searchedCustomers = $customers->where('deleted_at',null);
-        return $this->sendResponse($searchedCustomers,'Customers Search Result!',$searchedCustomers->count());
-    }
 
     public function update(Request $request){
-        $validator = $this->customerUpdateValidation($request);
+        $data = $this->getData($request);
+        $validator = $this->customerUpdateValidation($data);
         if($validator->fails()){
             return $this->sendError('Cannot Update Customer',$validator->errors());
-        }else{
-            $updateData = $this->getData($request);
-            Customer::where('id',$request->customerId)->update($updateData);
-            $updatedCustomer = Customer::where('id',$request->customerId)->get();
-            return $this->sendResponse($updatedCustomer,'Customer Updated Successfully',$updatedCustomer->count());
         }
-
-    }
-
-    private function getData($request){
-        return ['name' => $request->name,
-        'address' => $request->address,
-        'city' => $request->city];
+        $updateData = $validator->validated();
+        $updateData = collect($updateData)->except('customer_id')->toArray();
+        Customer::find($data['customer_id'])->update($updateData);
+        $updatedCustomer = Customer::find($data['customer_id']);
+        return $this->sendResponse($updatedCustomer,'Customer Updated Successfully',$updatedCustomer->count());
     }
 
     private function customerCreateValidation($request){
-        return Validator::make($request->all(),[
+        return Validator::make($request,[
             'name' => 'required',
+            'address' => 'nullable',
+            'city' => 'nullable'
         ]);
     }
 
     private function customerUpdateValidation($request){
-        return Validator::make($request->all(),[
-            'customerId' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {
+        return Validator::make($request,[
+            'customer_id' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {
                                 return $query->where('deleted_at',null);
                             })],
+            'name' => 'nullable',
+            'address' => 'nullable',
+            'city' => 'nullable'
         ],[
-            'customerId.exists' => 'Customer Not Found!'
+            'customer_id.exists' => 'Customer Not Found!'
         ]);
     }
 
     private function validationForDelete($request){
-        return Validator::make($request->all(),[
-            'customerId' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {
+        // dd($request);
+        return Validator::make($request,[
+            'customer_id' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {
                                 return $query->where('deleted_at',null);
                             })],
         ],[
-            'customerId.exists' => 'Customer Not Found!'
+            'customer_id.exists' => 'Customer Not Found!'
         ]);
     }
 

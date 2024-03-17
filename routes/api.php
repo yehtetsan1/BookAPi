@@ -19,16 +19,14 @@ use App\Http\Controllers\OrderDetailController;
 |
 */
 
-Route::get('/customers/list',[CustomerController::class,'index'])->name('customer#list');
+Route::post('/customers/list',[CustomerController::class,'index'])->name('customer#list');
 Route::post('/customers/create',[CustomerController::class,'create'])->name('customer#create');
 Route::post('/customers/delete',[CustomerController::class,'delete'])->name('customer#delete');
-Route::post('/customers/search',[CustomerController::class,'search'])->name('customer#search');
 Route::post('/customers/update',[CustomerController::class,'update'])->name('customer#update');
 
-Route::get('/books/list',[BookController::class,'index'])->name('book#list');
+Route::post('/books/list',[BookController::class,'index'])->name('book#list');
 Route::post('/books/create',[BookController::class,'create'])->name('book#create');
 Route::post('/books/delete',[BookController::class,'delete'])->name('book#delete');
-Route::post('/books/search',[BookController::class,'search'])->name('book#search');
 Route::post('/books/update',[BookController::class,'update'])->name('book#update');
 Route::post('/books/image/upload',[BookController::class,'imageUpload'])->name('book#imageUpload');
 
