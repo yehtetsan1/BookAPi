@@ -22,20 +22,32 @@ class OrderController extends BaseController
         );
     }
     public function create(Request $request){
+
         $data = $this->getData($request);
+
         $validator = $this->orderValidation($data);
+
         if($validator->fails()){
           return $this->sendError('Cannot Create Order',$validator->errors());
-        }else{
+        }
+
+        else{
+
             $bookData = Book::where('id',$data['book_id'])->first()->toArray();
+
             $order = $this->getOrderData($data,$bookData);
+
             $orderData = Order::create($order);
+
             $orderDetail = $this->getOrderDetailsData($data,$orderData);
+
             $orderDetailData = OrderDetail::create($orderDetail);
+
             $responseData = [
                 $orderData,
                 $orderDetailData
             ];
+
             return $this->sendResponse($responseData,'Order Created');
         }
     }

@@ -13,6 +13,7 @@ use App\Http\Controllers\Base\BaseController as BaseController;
 class CustomerController extends BaseController
 {
     private function getData($request){
+
         return $request->only(
             'key',
             'customer_id',
@@ -23,61 +24,91 @@ class CustomerController extends BaseController
     }
 
     public function index(Request $request){
+
         $searchKey = $this->getData($request);
-        $customers = Customer::where('deleted_at',null)->get();
+
         if(isset($searchKey['key'])){
             $customers = Customer::where('name','like','%'.$searchKey['key'].'%')
-                ->orWhere('address','like','%'.$searchKey['key'].'%')
-                ->orWhere('city','like','%'.$searchKey['key'].'%')
-                ->get();
+                                ->orWhere('address','like','%'.$searchKey['key'].'%')
+                                ->orWhere('city','like','%'.$searchKey['key'].'%');
         }
-        if(isset($searchKey['name'])){
-            $customers = Customer::where('name','like','%'.$searchKey['name'].'%')->get();
+
+        elseif(isset($searchKey['name'])){
+            $customers = Customer::where('name','like','%'.$searchKey['name'].'%');
         }
-        if(isset($searchKey['address'])){
-            $customers = Customer::where('address','like','%'.$searchKey['address'].'%')->get();
+
+        elseif(isset($searchKey['address'])){
+            $customers = Customer::where('address','like','%'.$searchKey['address'].'%');
         }
-        if(isset($searchKey['city'])){
-            $customers = Customer::where('city','like','%'.$searchKey['city'].'%')->get();
+
+        elseif(isset($searchKey['city'])){
+            $customers = Customer::where('city','like','%'.$searchKey['city'].'%');
         }
+
+        else{
+            $customers = Customer::query();
+        }
+
+        $customers = $customers->orderBy('created_at','desc')->get();
+
         return $this->sendResponse($customers,'Customer List',$customers->count());
     }
 
 
     public function create(Request $request){
+
         $data = $this->getData($request);
+
         $validator = $this->customerCreateValidation($data);
+
         if($validator->fails()){
             return $this->sendError('Cannot Create Customer',$validator->errors());
-        }else{
+        }
+
+        else{
             $createCustomer = $validator->validated();
+
             $createdCustomer = Customer::create($createCustomer);
+
             return $this->sendResponse($createdCustomer,'Customer Created Successfully!');
         }
     }
 
 
     public function delete(Request $request){
+
         $data = $this->getData($request);
+
         $validator = $this->validationForDelete($data);
+
         if($validator->fails()){
             return $this->sendError('Cannot Delete Customer',$validator->errors());
         }
+
         Customer::find($data['customer_id'])->delete();
+
         return $this->sendResponse([],'Customer Deleted Successfully!');
     }
 
 
     public function update(Request $request){
+
         $data = $this->getData($request);
+
         $validator = $this->customerUpdateValidation($data);
+
         if($validator->fails()){
             return $this->sendError('Cannot Update Customer',$validator->errors());
         }
+
         $updateData = $validator->validated();
+
         $updateData = collect($updateData)->except('customer_id')->toArray();
+
         Customer::find($data['customer_id'])->update($updateData);
+
         $updatedCustomer = Customer::find($data['customer_id']);
+
         return $this->sendResponse($updatedCustomer,'Customer Updated Successfully',$updatedCustomer->count());
     }
 
@@ -94,7 +125,7 @@ class CustomerController extends BaseController
             'customer_id' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {
                                 return $query->where('deleted_at',null);
                             })],
-            'name' => 'nullable',
+            'name' => 'required',
             'address' => 'nullable',
             'city' => 'nullable'
         ],[

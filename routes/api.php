@@ -36,9 +36,3 @@ Route::post('/bookReviews/delete',[BookReviewController::class,'delete'])->name(
 Route::post('/bookReviews/update',[BookReviewController::class,'update'])->name('bookReview#update');
 
 Route::post('/orders/create',[OrderController::class,'create'])->name('order#create');
-
-// Route::get('/orderDetails/test',[OrderDetailController::class,'testing'])->name('orderDetail#testing');
-
-// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//     return $request->user();
-// });

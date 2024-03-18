@@ -21,51 +21,77 @@ class BookReviewController extends BaseController
     }
 
     public function index(Request $request){
+
         $data = $this->getData($request);
-        $bookReviewList = BookReview::all();
+
         if(isset($data['book_id'])){
-            $bookReviewList = BookReview::where('book_id',$data['book_id'])->get();
+            $bookReviewList = BookReview::where('book_id',$data['book_id']);
         }
-        if(isset($data['bookReview_id'])){
-            $bookReviewList = BookReview::where('id',$data['bookReview_id'])->get();
+        elseif(isset($data['bookReview_id'])){
+            $bookReviewList = BookReview::where('id',$data['bookReview_id']);
         }
+        else{
+            $bookReviewList = BookReview::query();
+        }
+
+        $bookReviewList = $bookReviewList->orderBy('created_at','desc')->get();
+
         return $this->sendResponse($bookReviewList,'Book Reviews',$bookReviewList->count());
     }
 
 
     public function create(Request $request){
+
         $data = $this->getData($request);
+
         $validator = $this->bookReviewCreateValidator($data);
+
         if($validator->fails()){
           return $this->sendError('Cannot Create Book Review!',$validator->errors());
         }
+
         $reviewData = $validator->validated();
+
         $createdReview = BookReview::create($reviewData);
+
         return $this->sendResponse($createdReview,'Book Review Created');
     }
 
 
     public function delete(Request $request){
+
         $data = $this->getData($request);
+
         $validator = $this->validationForDelete($data);
+
         if($validator->fails()){
             return $this->sendError('Cannot Delete Book Review!',$validator->errors());
         }
+
         BookReview::find($data['bookReview_id'])->delete();
+
         return $this->sendResponse([],'Book Review Deleted');
     }
 
 
     public function update(Request $request){
+
         $data = $this->getData($request);
+
         $validator = $this->validationForUpdate($data);
+
         if($validator->fails()){
             return $this->sendError('Cannot Update Book Review!',$validator->errors());
         }
+
         $updateBookReview = $validator->validated();
+
         $updateBookReview = collect($updateBookReview)->except('bookReview_id')->toArray();
+
         BookReview::find($data['bookReview_id'])->update($updateBookReview);
+
         $updatedBookReview = BookReview::find($data['bookReview_id']);
+
         return $this->sendResponse($updatedBookReview,'Book Review Updated');
     }
 
