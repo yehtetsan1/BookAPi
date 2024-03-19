@@ -47,7 +47,7 @@ class BookReviewController extends BaseController
 
 
     public function create(Request $request){
-        dd($this->bookReviewValidator);
+
         $data = $this->getData($request);
 
         $validator = $this->bookReviewValidator->bookReviewCreateValidator($data);
@@ -56,9 +56,9 @@ class BookReviewController extends BaseController
           return $this->sendError('Cannot Create Book Review!',$validator->errors());
         }
 
-        $reviewData = $validator->validated();
+        $dataToCreate = $validator->validated();
 
-        $createdReview = BookReview::create($reviewData);
+        $createdReview = BookReview::create($dataToCreate);
 
         return $this->sendResponse($createdReview,'Book Review Created');
     }
@@ -90,13 +90,13 @@ class BookReviewController extends BaseController
             return $this->sendError('Cannot Update Book Review!',$validator->errors());
         }
 
-        $updateBookReview = $validator->validated();
+        $dataToUpdate = $validator->validated();
 
-        $updateBookReview = collect($updateBookReview)->except('bookReview_id')->toArray();
-
-        BookReview::find($data['bookReview_id'])->update($updateBookReview);
+        $dataToUpdate = collect($dataToUpdate)->except('bookReview_id')->toArray();
 
         $updatedBookReview = BookReview::find($data['bookReview_id']);
+
+        $updatedBookre->update($dataToUpdate)-git();
 
         return $this->sendResponse($updatedBookReview,'Book Review Updated');
     }

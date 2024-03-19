@@ -8,6 +8,19 @@ use Illuminate\Support\Facades\Validator;
 
 class OrderValidator
 {
+
+    public function orderListValidator($request){
+        return Validator::make($request,[
+            'order_id' => Rule::exists('orders', 'id')->where(function (Builder $query) {
+                            return $query->where('deleted_at',null);
+                        }),
+        ],[
+            'order_id.exists' => 'Order Does not exist',
+        ]);
+    }
+
+
+
     public function orderCreateValidation($request){
         return Validator::make($request,[
             'customer_id' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {

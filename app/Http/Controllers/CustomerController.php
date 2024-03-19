@@ -64,15 +64,16 @@ class CustomerController extends BaseController
     public function create(Request $request){
 
         $data = $this->getData($request);
+
         $validator = $this->customerValidator->customerCreateValidation($data);
 
         if($validator->fails()){
             return $this->sendError('Cannot Create Customer',$validator->errors());
         }
 
-        $createCustomer = $validator->validated();
+        $dataToCreate = $validator->validated();
 
-        $createdCustomer = Customer::create($createCustomer);
+        $createdCustomer = Customer::create($dataToCreate);
 
         return $this->sendResponse($createdCustomer,'Customer Created Successfully!');
     }
@@ -104,13 +105,13 @@ class CustomerController extends BaseController
             return $this->sendError('Cannot Update Customer',$validator->errors());
         }
 
-        $updateData = $validator->validated();
+        $dataToUpdate = $validator->validated();
 
-        $updateData = collect($updateData)->except('customer_id')->toArray();
-
-        Customer::find($data['customer_id'])->update($updateData);
+        $dataToUpdate = collect($dataToUpdate)->except('customer_id')->toArray();
 
         $updatedCustomer = Customer::find($data['customer_id']);
+
+        $updatedCustomer->update($dataToUpdate);
 
         return $this->sendResponse($updatedCustomer,'Customer Updated Successfully',$updatedCustomer->count());
     }

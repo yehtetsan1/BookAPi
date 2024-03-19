@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use App\Models\Book;
 use App\Models\BookReview;
+use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use App\Validators\BookValidator;
 use Illuminate\Support\Facades\Storage;
@@ -81,13 +82,13 @@ class BookController extends BaseController
             return $this->sendError('Book Create Failed',$validator->errors());
         }
 
-        $createData = $validator->validated();
+        $dataToCreate = $validator->validated();
 
         if(isset($data['cover_url'])){
-            $createData['cover_url'] = $this->imageStore($data['cover_url']);
+            $dataToCreate['cover_url'] = $this->imageStore($data['cover_url']);
         }
 
-        $createdBook = Book::create($createData);
+        $createdBook = Book::create($dataToCreate);
 
         return $this->sendResponse($createdBook,"Book Created Successfully");
 
@@ -120,9 +121,7 @@ class BookController extends BaseController
           return $this->sendError('Update Failed',$validator->errors());
         }
 
-        $updateData = $validator->validated();
-
-        $updateData['updated_at'] = Carbon::now();
+        $dataToUpdate = $validator->validated();
 
         if(isset($data['cover_url'])){
 
@@ -132,14 +131,14 @@ class BookController extends BaseController
                 return $this->sendError('Image Upload Failed!',$validator->errors());
             }
 
-            $updateData['cover_url'] = $this->imageStore($data['cover_url'],$data['book_id']);
+            $dataToUpdate['cover_url'] = $this->imageStore($data['cover_url'],$data['book_id']);
         }
 
-        $updateData = collect($updateData)->except('book_id')->toArray();
-
-        Book::find($data['book_id'])->update($updateData);
+        $dataToUpdate = Arr::except($dataToUpdate, ['book_id']);
 
         $updatedData = Book::find($data['book_id']);
+
+        $updatedData->update($dataToUpdate);
 
         return $this->sendResponse($updatedData,'Updated Successfully');
 
@@ -147,19 +146,19 @@ class BookController extends BaseController
 
     public function imageUpload(Request $request){
 
-        $uploadData = $this->getData($request);
+        $data = $this->getData($request);
 
-        $validator = $this->bookValidator->bookImageValidation($uploadData);
+        $validator = $this->bookValidator->bookImageValidation($data);
 
         if($validator->fails()){
           return $this->sendError('Image Upload Failed!',$validator->errors());
         }
 
-        $coverUrlData['cover_url'] = $this->imageStore($uploadData['cover_url'],$uploadData['book_id']);
+        $dataToUpload['cover_url'] = $this->imageStore($data['cover_url'],$data['book_id']);
 
-        Book::find($uploadData['book_id'])->update($coverUrlData);
+        $uploadedData = Book::find($data['book_id']);
 
-        $uploadedData = Book::find($uploadData['book_id']);
+        $uploadedData->update($dataToUpload);
 
         return $this->sendResponse($uploadedData,"Image Uploaded Successfully!");
     }
@@ -167,7 +166,7 @@ class BookController extends BaseController
     // For Create => No book_id // For Update => Need book_id
     public function imageStore($imageFile,$book_id = null){
 
-      if($book_id != null){
+      if($book_id){
 
           $bookData = Book::where('id',$book_id)->first();
 

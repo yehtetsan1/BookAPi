@@ -35,4 +35,6 @@ Route::post('/bookReviews/create',[BookReviewController::class,'create'])->name(
 Route::post('/bookReviews/delete',[BookReviewController::class,'delete'])->name('bookReview#delete');
 Route::post('/bookReviews/update',[BookReviewController::class,'update'])->name('bookReview#update');
 
+Route::post('/orders/list',[OrderController::class,'index'])->name('order#list');
 Route::post('/orders/create',[OrderController::class,'create'])->name('order#create');
+

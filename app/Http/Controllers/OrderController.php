@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use App\Models\Book;
 use App\Models\Order;
+use App\Models\Customer;
 use App\Models\OrderDetail;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -25,11 +26,43 @@ class OrderController extends BaseController
 
     private function getData($request){
         return $request->only(
+            'order_id',
             'customer_id',
             'book_id',
             'qty'
         );
     }
+
+    public function index(Request $request){
+
+        $data = $this->getData($request);
+
+        $validator = $this->orderValidator->orderListValidator($data);
+
+        if($validator->fails()){
+          return $this->sendError('Search Failed',$validator->errors());
+        }
+
+        if(isset($data['order_id'])){
+            $responseData = Order::where('id',$data['order_id'])
+                                    ->with([
+                                        'details' => function($query){
+                                            $query->orderBy('updated_at','desc');
+                                            }
+                                        ])
+                                    ->get();
+        }else{
+            $responseData = Order::with([
+                                        'details' => function($query){
+                                            $query->orderBy('updated_at','desc');
+                                            }
+                                        ])
+                                    ->get();
+        }
+
+        return $this->sendResponse($responseData,'Order List');
+    }
+
 
     public function create(Request $request){
 
@@ -41,25 +74,19 @@ class OrderController extends BaseController
           return $this->sendError('Cannot Create Order',$validator->errors());
         }
 
-        else{
+        $bookData = Book::where('id',$data['book_id'])->first()->toArray();
 
-            $bookData = Book::where('id',$data['book_id'])->first()->toArray();
+        $order = $this->getOrderData($data,$bookData);
 
-            $order = $this->getOrderData($data,$bookData);
+        $orderData = Order::create($order);
 
-            $orderData = Order::create($order);
+        $orderDetail = $this->getOrderDetailsData($data,$orderData);
 
-            $orderDetail = $this->getOrderDetailsData($data,$orderData);
+        $orderDetailData = OrderDetail::create($orderDetail);
 
-            $orderDetailData = OrderDetail::create($orderDetail);
+        $responseData = Order::where('id',$orderData->id)->with('details')->get();
 
-            $responseData = [
-                $orderData,
-                $orderDetailData
-            ];
-
-            return $this->sendResponse($responseData,'Order Created');
-        }
+        return $this->sendResponse($responseData,'Order Created');
     }
 
     private function getOrderData($data,$bookData){
