@@ -5,13 +5,19 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use App\Models\Customer;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Facades\Validator;
+use App\Validators\CustomerValidator;
 use App\Http\Controllers\Base\BaseController as BaseController;
 
 class CustomerController extends BaseController
 {
+    protected $customerValidator;
+
+    public function __construct(
+        CustomerValidator $customerValidator
+    ){
+        $this->customerValidator = $customerValidator;
+    }
+
     private function getData($request){
 
         return $request->only(
@@ -49,7 +55,7 @@ class CustomerController extends BaseController
             $customers = Customer::query();
         }
 
-        $customers = $customers->orderBy('created_at','desc')->get();
+        $customers = $customers->orderBy('updated_at','desc')->get();
 
         return $this->sendResponse($customers,'Customer List',$customers->count());
     }
@@ -58,20 +64,17 @@ class CustomerController extends BaseController
     public function create(Request $request){
 
         $data = $this->getData($request);
-
-        $validator = $this->customerCreateValidation($data);
+        $validator = $this->customerValidator->customerCreateValidation($data);
 
         if($validator->fails()){
             return $this->sendError('Cannot Create Customer',$validator->errors());
         }
 
-        else{
-            $createCustomer = $validator->validated();
+        $createCustomer = $validator->validated();
 
-            $createdCustomer = Customer::create($createCustomer);
+        $createdCustomer = Customer::create($createCustomer);
 
-            return $this->sendResponse($createdCustomer,'Customer Created Successfully!');
-        }
+        return $this->sendResponse($createdCustomer,'Customer Created Successfully!');
     }
 
 
@@ -79,7 +82,7 @@ class CustomerController extends BaseController
 
         $data = $this->getData($request);
 
-        $validator = $this->validationForDelete($data);
+        $validator = $this->customerValidator->validationForDelete($data);
 
         if($validator->fails()){
             return $this->sendError('Cannot Delete Customer',$validator->errors());
@@ -95,7 +98,7 @@ class CustomerController extends BaseController
 
         $data = $this->getData($request);
 
-        $validator = $this->customerUpdateValidation($data);
+        $validator = $this->customerValidator->customerUpdateValidation($data);
 
         if($validator->fails()){
             return $this->sendError('Cannot Update Customer',$validator->errors());
@@ -111,38 +114,4 @@ class CustomerController extends BaseController
 
         return $this->sendResponse($updatedCustomer,'Customer Updated Successfully',$updatedCustomer->count());
     }
-
-    private function customerCreateValidation($request){
-        return Validator::make($request,[
-            'name' => 'required',
-            'address' => 'nullable',
-            'city' => 'nullable'
-        ]);
-    }
-
-    private function customerUpdateValidation($request){
-        return Validator::make($request,[
-            'customer_id' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {
-                                return $query->where('deleted_at',null);
-                            })],
-            'name' => 'required',
-            'address' => 'nullable',
-            'city' => 'nullable'
-        ],[
-            'customer_id.exists' => 'Customer Not Found!'
-        ]);
-    }
-
-    private function validationForDelete($request){
-        // dd($request);
-        return Validator::make($request,[
-            'customer_id' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {
-                                return $query->where('deleted_at',null);
-                            })],
-        ],[
-            'customer_id.exists' => 'Customer Not Found!'
-        ]);
-    }
-
-
 }

@@ -8,12 +8,21 @@ use App\Models\Order;
 use App\Models\OrderDetail;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Validators\OrderValidator;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Base\BaseController as BaseController;
 
 class OrderController extends BaseController
 {
+    protected $orderValidator;
+
+    public function __construct(
+        OrderValidator $orderValidator
+    ){
+        $this->orderValidator = $orderValidator;
+    }
+
     private function getData($request){
         return $request->only(
             'customer_id',
@@ -21,11 +30,12 @@ class OrderController extends BaseController
             'qty'
         );
     }
+
     public function create(Request $request){
 
         $data = $this->getData($request);
 
-        $validator = $this->orderValidation($data);
+        $validator = $this->orderValidator->orderCreateValidation($data);
 
         if($validator->fails()){
           return $this->sendError('Cannot Create Order',$validator->errors());
@@ -66,19 +76,5 @@ class OrderController extends BaseController
             'book_id' => $data['book_id'],
             'qty' => $data['qty']
         ];
-    }
-
-    private function orderValidation($request){
-        return Validator::make($request,[
-            'customer_id' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {
-                                return $query->where('deleted_at',null);
-                            })],
-            'book_id' => ['required', Rule::exists('books', 'id')->where(function (Builder $query) {
-                            return $query->where('deleted_at',null);
-                        })],
-        ],[
-            'book_id.exists' => 'Book Not Found',
-            'customer_id.exists' => 'Customer Not Found'
-        ]);
     }
 }

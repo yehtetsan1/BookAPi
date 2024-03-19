@@ -5,13 +5,19 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use App\Models\BookReview;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Facades\Validator;
+use App\Validators\BookReviewValidator;
 use App\Http\Controllers\Base\BaseController as BaseController;
 
 class BookReviewController extends BaseController
 {
+    protected $bookReviewValidator;
+
+    public function __construct(
+        BookReviewValidator $bookReviewValidator
+    ){
+        $this->bookReviewValidator = $bookReviewValidator;
+    }
+
     private function getData($request){
         return $request->only(
             'book_id',
@@ -34,17 +40,17 @@ class BookReviewController extends BaseController
             $bookReviewList = BookReview::query();
         }
 
-        $bookReviewList = $bookReviewList->orderBy('created_at','desc')->get();
+        $bookReviewList = $bookReviewList->orderBy('updated_at','desc')->get();
 
         return $this->sendResponse($bookReviewList,'Book Reviews',$bookReviewList->count());
     }
 
 
     public function create(Request $request){
-
+        dd($this->bookReviewValidator);
         $data = $this->getData($request);
 
-        $validator = $this->bookReviewCreateValidator($data);
+        $validator = $this->bookReviewValidator->bookReviewCreateValidator($data);
 
         if($validator->fails()){
           return $this->sendError('Cannot Create Book Review!',$validator->errors());
@@ -62,7 +68,7 @@ class BookReviewController extends BaseController
 
         $data = $this->getData($request);
 
-        $validator = $this->validationForDelete($data);
+        $validator = $this->bookReviewValidator->validationForDelete($data);
 
         if($validator->fails()){
             return $this->sendError('Cannot Delete Book Review!',$validator->errors());
@@ -78,7 +84,7 @@ class BookReviewController extends BaseController
 
         $data = $this->getData($request);
 
-        $validator = $this->validationForUpdate($data);
+        $validator = $this->bookReviewValidator->validationForUpdate($data);
 
         if($validator->fails()){
             return $this->sendError('Cannot Update Book Review!',$validator->errors());
@@ -94,38 +100,4 @@ class BookReviewController extends BaseController
 
         return $this->sendResponse($updatedBookReview,'Book Review Updated');
     }
-
-
-    private function bookReviewCreateValidator($request){
-        return Validator::make($request,[
-                  'book_id' => ['required', Rule::exists('books', 'id')->where(function (Builder $query) {
-                                  return $query->where('deleted_at',null);
-                              })],
-                  'description' => 'required'
-              ],[
-                'book_id.exists' => 'The Book Not Found',
-              ]);
-    }
-
-    private function validationForDelete($request){
-        return Validator::make($request,[
-            'bookReview_id' => ['required', Rule::exists('book_reviews', 'id')->where(function (Builder $query) {
-                                    return $query->where('deleted_at',null);
-                              })],
-        ],[
-            'bookReview_id.exists' => 'Review Not Found!'
-        ]);
-    }
-
-    private function validationForUpdate($request){
-        return Validator::make($request,[
-            'bookReview_id' => ['required', Rule::exists('book_reviews', 'id')->where(function (Builder $query) {
-                                    return $query->where('deleted_at',null);
-                              })],
-            'description' => 'required'
-        ],[
-            'bookReview_id.exists' => 'Review Not Found!'
-        ]);
-    }
-
 }

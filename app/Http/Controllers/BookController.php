@@ -6,14 +6,20 @@ use Carbon\Carbon;
 use App\Models\Book;
 use App\Models\BookReview;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Illuminate\Database\Query\Builder;
+use App\Validators\BookValidator;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Base\BaseController as BaseController;
 
 class BookController extends BaseController
 {
+
+    protected $bookValidator;
+
+    public function __construct(
+        BookValidator $bookValidator
+    ){
+        $this->bookValidator = $bookValidator;
+    }
 
     private function getData($request){
         return $request->only(
@@ -59,7 +65,7 @@ class BookController extends BaseController
             $bookList = Book::query();
         }
 
-        $bookList = $bookList->orderBy('created_at','desc')->get();
+        $bookList = $bookList->orderBy('updated_at','desc')->get();
 
         return $this->sendResponse($bookList,"Book List",$bookList->count());
     }
@@ -69,7 +75,7 @@ class BookController extends BaseController
 
         $data = $this->getData($request);
 
-        $validator = $this->bookCreateValidation($data);
+        $validator = $this->bookValidator->bookCreateValidation($data);
 
         if($validator->fails()){
             return $this->sendError('Book Create Failed',$validator->errors());
@@ -78,15 +84,6 @@ class BookController extends BaseController
         $createData = $validator->validated();
 
         if(isset($data['cover_url'])){
-
-            $validator = Validator::make($data,[
-                            'cover_url' =>'mimes:png,jpg,jpeg|max:4000'
-                        ]);
-
-            if($validator->fails()){
-                return $this->sendError('Image Upload Failed',$validator->errors());
-            }
-
             $createData['cover_url'] = $this->imageStore($data['cover_url']);
         }
 
@@ -101,7 +98,7 @@ class BookController extends BaseController
 
         $data = $this->getData($request);
 
-        $validator = $this->bookDeleteValidation($data);
+        $validator = $this->bookValidator->bookDeleteValidation($data);
 
         if($validator->fails()){
             return $this->sendError('Book Delete Failed',$validator->errors());
@@ -117,7 +114,7 @@ class BookController extends BaseController
 
         $data = $this->getData($request);
 
-        $validator= $this->bookUpdateValidation($data);
+        $validator= $this->bookValidator->bookUpdateValidation($data);
 
         if($validator->fails()){
           return $this->sendError('Update Failed',$validator->errors());
@@ -129,7 +126,7 @@ class BookController extends BaseController
 
         if(isset($data['cover_url'])){
 
-            $validator = $this->bookImageValidation($data);
+            $validator = $this->bookValidator->bookImageValidation($data);
 
             if($validator->fails()){
                 return $this->sendError('Image Upload Failed!',$validator->errors());
@@ -152,7 +149,7 @@ class BookController extends BaseController
 
         $uploadData = $this->getData($request);
 
-        $validator = $this->bookImageValidation($uploadData);
+        $validator = $this->bookValidator->bookImageValidation($uploadData);
 
         if($validator->fails()){
           return $this->sendError('Image Upload Failed!',$validator->errors());
@@ -184,55 +181,5 @@ class BookController extends BaseController
       $imageFile->storeAs('public',$fileName);
 
       return $fileName;
-    }
-
-
-    private function bookCreateValidation($request){
-
-        return Validator::make($request,[
-            'ISBN' => 'required|unique:books,ISBN',
-            'author' => 'required',
-            'title' => 'required',
-            'price' => 'required',
-        ]);
-    }
-
-
-    public function bookDeleteValidation($request){
-
-        return Validator::make($request,[
-            'book_id' => ['required', Rule::exists('books', 'id')->where(function (Builder $query) {
-                            return $query->where('deleted_at',null);
-                        })]
-        ],['book_id.exists' => 'Book Not Found']);
-    }
-
-
-    private function bookUpdateValidation($request){
-
-        return Validator::make($request,[
-            'book_id' => ['required', Rule::exists('books', 'id')->where(function (Builder $query) {
-                            return $query->where('deleted_at',null);
-                        })],
-            'ISBN' => 'required|unique:books,ISBN,'.$request['book_id'],
-            'author' => 'required',
-            'title' => 'required',
-            'price' => 'required',
-        ],[
-            'book_id.exists' => 'Book Not Found'
-        ]);
-    }
-
-
-    Private function bookImageValidation($uploadData){
-
-        return Validator::make($uploadData,[
-            'book_id' => ['required', Rule::exists('books', 'id')->where(function (Builder $query) {
-                            return $query->where('deleted_at',null);
-                        })],
-            'cover_url' => 'required|mimes:png,jpg,jpeg|max:4000'
-        ],[
-            'book_id.exists' => 'Book Not Found'
-        ]);
     }
 }

@@ -12,20 +12,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('orders', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('customer_id');
-            $table->foreign('customer_id')->references('id')->on('customers');
-            $table->double('amount')->nullable();
-            $table->dateTime('date')->default(Carbon::now());
-            $table->dateTime('deleted_at')->nullable();
-            $table->dateTime('created_at')->default(Carbon::now());
-            $table->dateTime('updated_at')->default(Carbon::now());
+        if(!Schema::hasTable('orders')){
+            Schema::create('orders', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('customer_id');
+                $table->foreign('customer_id')->references('id')->on('customers')->onUpdate('cascade')->onDelete('cascade');
+                $table->double('amount')->nullable();
+                $table->dateTime('date')->default(Carbon::now());
+                $table->dateTime('deleted_at')->nullable();
+                $table->dateTime('created_at')->default(Carbon::now());
+                $table->dateTime('updated_at')->default(Carbon::now());
 
-            $table->index('customer_id');
-            $table->index('amount');
-            $table->index('date');
-        });
+                $table->index('customer_id','idx_orders_customer_id');
+                $table->index('amount','idx_orders_amount');
+                $table->index('date','idx_orders_date');
+                $table->index('deleted_at','idx_orders_deleted_at');
+                $table->index('created_at','idx_orders_created_at');
+            });
+        }
     }
 
     /**
