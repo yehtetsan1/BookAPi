@@ -20,7 +20,7 @@ use App\Http\Controllers\OrderDetailController;
 */
 
 Route::post('/customers/list',[CustomerController::class,'index'])->name('customer#list');
-// Route::post('/customers/show',[CustomerController::class,'show'])->name('customer#show');
+Route::post('/customers/show',[CustomerController::class,'show'])->name('customer#show');
 Route::post('/customers/create',[CustomerController::class,'create'])->name('customer#create');
 Route::post('/customers/delete',[CustomerController::class,'delete'])->name('customer#delete');
 Route::post('/customers/update',[CustomerController::class,'update'])->name('customer#update');
@@ -39,5 +39,6 @@ Route::post('/bookReviews/delete',[BookReviewController::class,'delete'])->name(
 Route::post('/bookReviews/update',[BookReviewController::class,'update'])->name('bookReview#update');
 
 Route::post('/orders/list',[OrderController::class,'index'])->name('order#list');
+Route::post('/orders/show',[OrderController::class,'show'])->name('order#list');
 Route::post('/orders/create',[OrderController::class,'create'])->name('order#create');
 

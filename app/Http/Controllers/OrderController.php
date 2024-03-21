@@ -12,11 +12,13 @@ use Illuminate\Validation\Rule;
 use App\Validators\OrderValidator;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Resources\OrderAndDetailResource;
 use App\Http\Controllers\Base\BaseController as BaseController;
 
 class OrderController extends BaseController
 {
     protected $orderValidator;
+
 
     public function __construct(
         OrderValidator $orderValidator
@@ -24,7 +26,8 @@ class OrderController extends BaseController
         $this->orderValidator = $orderValidator;
     }
 
-    private function getData($request){
+
+    private function getRequestData($request){
         return $request->only(
             'order_id',
             'customer_id',
@@ -33,28 +36,30 @@ class OrderController extends BaseController
         );
     }
 
-    public function index(Request $request){
 
-        $data = $this->getData($request);
+    public function index(){
 
-        $validator = $this->orderValidator->orderListValidator($data);
+        $responseData = Order::get();
+
+        $responseData = OrderAndDetailResource::collection($responseData);
+
+        return $this->sendResponse($responseData,'Order List');
+    }
+
+
+    public function show(Request $request){
+
+        $data = $this->getRequestData($request);
+
+        $validator = $this->orderValidator->orderShowValidator($data);
 
         if($validator->fails()){
-          return $this->sendError('Search Failed',$validator->errors());
+          return $this->sendError('Cannot show Order',$validator->errors());
         }
 
-        if(isset($data['order_id'])){
-            $responseData = Order::where('id',$data['order_id'])
-                                    ->with([
-                                        'details' => function($query){$query->orderBy('updated_at','desc');}
-                                        ])
-                                    ->get();
-        }else{
-            $responseData = Order::with([
-                                        'details' => function($query){$query->orderBy('updated_at','desc');}
-                                        ])
-                                    ->get();
-        }
+        $responseData = Order::where('id',$data['order_id'])->get();
+
+        $responseData = OrderAndDetailResource::collection($responseData);
 
         return $this->sendResponse($responseData,'Order List');
     }
@@ -62,7 +67,7 @@ class OrderController extends BaseController
 
     public function create(Request $request){
 
-        $data = $this->getData($request);
+        $data = $this->getRequestData($request);
 
         $validator = $this->orderValidator->orderCreateValidation($data);
 

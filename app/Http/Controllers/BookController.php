@@ -23,8 +23,10 @@ class BookController extends BaseController
         $this->bookValidator = $bookValidator;
     }
 
-    private function getData($request){
+    private function getRequestData($request){
         return $request->only(
+                            'page',
+                            'paginateBy',
                             'key',
                             'book_id',
                             'ISBN',
@@ -38,9 +40,7 @@ class BookController extends BaseController
     }
 
 
-    public function index(Request $request){
-
-        $searchKey = $this->getData($request);
+    private function getBooksByCondition($searchKey){
 
         if(isset($searchKey['key'])){
             $bookList = Book::where('deleted_at',null)->where('author','like','%'.$searchKey['key'].'%')
@@ -68,17 +68,44 @@ class BookController extends BaseController
             $bookList = Book::query();
         }
 
-        $bookList = $bookList->orderBy('updated_at','desc')->get();
+        return $bookList;
+    }
+
+
+    public function index(Request $request){
+
+        $searchKey = $this->getRequestData($request);
+
+        $bookList = $this->getBooksByCondition($searchKey);
+
+        if(isset($searchKey['page']) || isset($searchKey['paginateBy'])){
+
+            $validator = $this->bookValidator->bookPageValidator($searchKey);
+
+            if($validator->fails()){
+                return $this->sendError('Pagination Error',$validator->errors());
+            }
+
+            $bookList = $bookList->orderBy('updated_at','desc')->paginate($searchKey['paginateBy'],'*','books',$searchKey['page']);
+        }else{
+            $bookList = $bookList->orderBy('updated_at','desc')->paginate();
+        }
+
+        $total = $bookList->total();
+
+        $currentPage = $bookList->currentPage();
+
+        $lastPage = $bookList->lastPage();
 
         $bookList = BookResource::collection($bookList);
 
-        return $this->sendResponse($bookList,"Book List",$bookList->count());
+        return $this->sendResponse($bookList,"Book List",$total,$currentPage,$lastPage);
     }
 
 
     public function show(Request $request){
 
-        $data = $this->getData($request);
+        $data = $this->getRequestData($request);
 
         $validator = $this->bookValidator->bookShowValidator($data);
 
@@ -96,7 +123,7 @@ class BookController extends BaseController
 
     public function create(Request $request){
 
-        $data = $this->getData($request);
+        $data = $this->getRequestData($request);
 
         $validator = $this->bookValidator->bookCreateValidation($data);
 
@@ -121,7 +148,7 @@ class BookController extends BaseController
 
     public function delete(Request $request){
 
-        $data = $this->getData($request);
+        $data = $this->getRequestData($request);
 
         $validator = $this->bookValidator->bookDeleteValidation($data);
 
@@ -137,7 +164,7 @@ class BookController extends BaseController
 
     public function update(Request $request){
 
-        $data = $this->getData($request);
+        $data = $this->getRequestData($request);
 
         $validator= $this->bookValidator->bookUpdateValidation($data);
 
@@ -171,7 +198,7 @@ class BookController extends BaseController
 
     public function imageUpload(Request $request){
 
-        $data = $this->getData($request);
+        $data = $this->getRequestData($request);
 
         $validator = $this->bookValidator->bookImageValidation($data);
 

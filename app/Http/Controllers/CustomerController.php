@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use App\Validators\CustomerValidator;
+use App\Http\Resources\CustomerResource;
 use App\Http\Controllers\Base\BaseController as BaseController;
 
 class CustomerController extends BaseController
@@ -18,9 +19,11 @@ class CustomerController extends BaseController
         $this->customerValidator = $customerValidator;
     }
 
-    private function getData($request){
+    private function getRequestData($request){
 
         return $request->only(
+            'page',
+            'paginateBy',
             'key',
             'customer_id',
             'name',
@@ -29,9 +32,8 @@ class CustomerController extends BaseController
         );
     }
 
-    public function index(Request $request){
 
-        $searchKey = $this->getData($request);
+    private function getCustomersByCondition(){
 
         if(isset($searchKey['key'])){
             $customers = Customer::where('name','like','%'.$searchKey['key'].'%')
@@ -55,17 +57,64 @@ class CustomerController extends BaseController
             $customers = Customer::query();
         }
 
-        $customers = $customers->orderBy('updated_at','desc')->get();
+        return $customers;
+    }
 
-        return $this->sendResponse($customers,'Customer List',$customers->count());
+
+    public function index(Request $request){
+
+        $searchKey = $this->getRequestData($request);
+
+        $customers = $this->getCustomersByCondition($searchKey);
+
+        if(isset($searchKey['page']) || isset($searchKey['paginateBy'])){
+
+            $validator = $this->customerValidator->customerPageValidator($searchKey);
+
+            if($validator->fails()){
+                return $this->sendError('Pagination Error',$validator->errors());
+            }
+
+            $customers = $customers->orderBy('updated_at','desc')->paginate($searchKey['paginateBy'],'*','books',$searchKey['page']);
+        }else{
+            $customers = $customers->orderBy('updated_at','desc')->paginate();
+        }
+
+        $total = $customers->total();
+
+        $currentPage = $customers->currentPage();
+
+        $lastPage = $customers->lastPage();
+
+        $customers = CustomerResource::collection($customers);
+
+        return $this->sendResponse($customers,"Customer List",$total,$currentPage,$lastPage);
+    }
+
+
+    public function show(Request $request){
+
+        $data = $this->getData($request);
+
+        $validator = $this->customerValidator->customerShowValidator($data);
+
+        if($validator->fails()){
+            return $this->sendError('Cannot Show Customer List',$validator->errors());
+        }
+
+        $customer = Customer::find($data['customer_id']);
+
+        $customer = new CustomerResource($customer);
+
+        return $this->sendResponse($customer,'Book Reviews');
     }
 
 
     public function create(Request $request){
 
-        $data = $this->getData($request);
+        $data = $this->getRequestData($request);
 
-        $validator = $this->customerValidator->customerCreateValidation($data);
+        $validator = $this->customerValidator->customerCreateValidator($data);
 
         if($validator->fails()){
             return $this->sendError('Cannot Create Customer',$validator->errors());
@@ -75,15 +124,17 @@ class CustomerController extends BaseController
 
         $customer = Customer::create($attributes);
 
+        $customer = new CustomerResource($customer);
+
         return $this->sendResponse($customer,'Customer Created Successfully!');
     }
 
 
     public function delete(Request $request){
 
-        $data = $this->getData($request);
+        $data = $this->getRequestData($request);
 
-        $validator = $this->customerValidator->validationForDelete($data);
+        $validator = $this->customerValidator->customerDeleteValidator($data);
 
         if($validator->fails()){
             return $this->sendError('Cannot Delete Customer',$validator->errors());
@@ -97,9 +148,9 @@ class CustomerController extends BaseController
 
     public function update(Request $request){
 
-        $data = $this->getData($request);
+        $data = $this->getRequestData($request);
 
-        $validator = $this->customerValidator->customerUpdateValidation($data);
+        $validator = $this->customerValidator->customerUpdateValidator($data);
 
         if($validator->fails()){
             return $this->sendError('Cannot Update Customer',$validator->errors());
@@ -112,6 +163,8 @@ class CustomerController extends BaseController
         $customer = Customer::find($data['customer_id']);
 
         $customer->update($attributes);
+
+        $customer = new CustomerResource($customer);
 
         return $this->sendResponse($customer,'Customer Updated Successfully');
     }

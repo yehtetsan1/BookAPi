@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Validator;
 class OrderValidator
 {
 
-    public function orderListValidator($request){
+    public function orderShowValidator($request){
         return Validator::make($request,[
-            'order_id' => Rule::exists('orders', 'id')->where(function (Builder $query) {
+            'order_id' => ['required',Rule::exists('orders', 'id')->where(function (Builder $query) {
                             return $query->where('deleted_at',null);
-                        }),
+                        })],
         ],[
             'order_id.exists' => 'Order Does not exist',
         ]);

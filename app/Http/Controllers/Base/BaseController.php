@@ -8,15 +8,27 @@ use App\Http\Controllers\Controller;
 class BaseController extends Controller
 {
 
-    public function sendResponse($result,$message,$total=0){
+    public function sendResponse($result,$message,$total=0,$currentPage=1,$lastPage=1){
 
         if($total>0){
-            $response=[
-                'success' => 200,
-                'message' => $message,
-                'total' => $total,
-                'data' => $result
-            ];
+            if($currentPage>$lastPage){
+                $response = [
+                    'success' => 200,
+                    'message' => "No More Data To Show",
+                    'page' => $currentPage,
+                    'totalPages' => $lastPage,
+                    'total' => $total,
+                    'data' => $result];
+            }
+            else{
+                $response=[
+                    'success' => 200,
+                    'message' => $message,
+                    'page' => $currentPage,
+                    'totalPages' => $lastPage,
+                    'total' => $total,
+                    'data' => $result];
+            }
         }else{
             $response=[
                 'success' => 200,

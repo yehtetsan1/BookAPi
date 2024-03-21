@@ -19,7 +19,7 @@ class BookReviewController extends BaseController
         $this->bookReviewValidator = $bookReviewValidator;
     }
 
-    private function getData($request){
+    private function getRequestData($request){
         return $request->only(
             'book_id',
             'bookReview_id',
@@ -29,7 +29,7 @@ class BookReviewController extends BaseController
 
     public function index(Request $request){
 
-        $data = $this->getData($request);
+        $data = $this->getRequestData($request);
 
         if(isset($data['book_id'])){
             $bookReviewList = BookReview::where('book_id',$data['book_id']);
@@ -47,7 +47,7 @@ class BookReviewController extends BaseController
 
     public function show(Request $request){
 
-        $data = $this->getData($request);
+        $data = $this->getRequestData($request);
 
         $validator = $this->bookReviewValidator->bookReviewShowValidator($data);
 
@@ -55,9 +55,9 @@ class BookReviewController extends BaseController
             return $this->sendError('Cannot Show BookReview',$validator->errors());
         }
 
-        $bookReview = BookReview::where('id',$data['bookReview_id'])->get();
+        $bookReview = BookReview::find($data['bookReview_id']);
 
-        $bookReview = BookReviewResource::collection($bookReview);
+        $bookReview = new BookReviewResource($bookReview);
 
         return $this->sendResponse($bookReview,'Book Reviews');
     }
@@ -65,7 +65,7 @@ class BookReviewController extends BaseController
 
     public function create(Request $request){
 
-        $data = $this->getData($request);
+        $data = $this->getRequestData($request);
 
         $validator = $this->bookReviewValidator->bookReviewCreateValidator($data);
 
@@ -77,13 +77,15 @@ class BookReviewController extends BaseController
 
         $bookReview = BookReview::create($attributes);
 
+        $bookReview = new BookReviewResource($bookReview);
+
         return $this->sendResponse($bookReview,'Book Review Created');
     }
 
 
     public function delete(Request $request){
 
-        $data = $this->getData($request);
+        $data = $this->getRequestData($request);
 
         $validator = $this->bookReviewValidator->validationForDelete($data);
 
@@ -99,7 +101,7 @@ class BookReviewController extends BaseController
 
     public function update(Request $request){
 
-        $data = $this->getData($request);
+        $data = $this->getRequestData($request);
 
         $validator = $this->bookReviewValidator->validationForUpdate($data);
 
@@ -114,6 +116,8 @@ class BookReviewController extends BaseController
         $bookReview = BookReview::find($data['bookReview_id']);
 
         $bookReview->update($attributes);
+
+        $bookReview = new BookReviewResource($bookReview);
 
         return $this->sendResponse($bookReview,'Book Review Updated');
     }

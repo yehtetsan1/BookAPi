@@ -9,16 +9,35 @@ use Illuminate\Support\Facades\Validator;
 class CustomerValidator
 {
 
-    public function customerCreateValidation($request){
-        return Validator::make($request,[
+    public function customerPageValidator($data){
+        return Validator::make($data,[
+            'page' => 'required',
+            'paginateBy' => 'required'
+        ]);
+    }
+
+
+    public static function customerShowValidator($data){
+        return Validator::make($data,[
+            'customer_id' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {
+                                return $query->where('deleted_at',null);
+                            })],
+        ]);
+
+    }
+
+
+    public function customerCreateValidator($data){
+        return Validator::make($data,[
             'name' => 'required',
             'address' => 'nullable',
             'city' => 'nullable'
         ]);
     }
 
-    public function customerUpdateValidation($request){
-        return Validator::make($request,[
+
+    public function customerUpdateValidator($data){
+        return Validator::make($data,[
             'customer_id' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {
                                 return $query->where('deleted_at',null);
                             })],
@@ -30,8 +49,9 @@ class CustomerValidator
         ]);
     }
 
-    public function validationForDelete($request){
-        return Validator::make($request,[
+
+    public function customerDeleteValidator($data){
+        return Validator::make($data,[
             'customer_id' => ['required', Rule::exists('customers', 'id')->where(function (Builder $query) {
                                 return $query->where('deleted_at',null);
                             })],

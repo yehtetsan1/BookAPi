@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Validator;
 class BookReviewValidator
 
 {
-    public function bookReviewShowValidator($request){
-        return Validator::make($request,[
+    public function bookReviewShowValidator($data){
+        return Validator::make($data,[
                 'bookReview_id' => ['required', Rule::exists('book_reviews', 'id')->where(function (Builder $query) {
                                     return $query->where('deleted_at',null);
                                 })],
@@ -20,8 +20,8 @@ class BookReviewValidator
     }
 
 
-    public function bookReviewCreateValidator($request){
-        return Validator::make($request,[
+    public function bookReviewCreateValidator($data){
+        return Validator::make($data,[
                   'book_id' => ['required', Rule::exists('books', 'id')->where(function (Builder $query) {
                                   return $query->where('deleted_at',null);
                               })],
@@ -31,8 +31,8 @@ class BookReviewValidator
               ]);
     }
 
-    public function validationForDelete($request){
-        return Validator::make($request,[
+    public function validationForDelete($data){
+        return Validator::make($data,[
             'bookReview_id' => ['required', Rule::exists('book_reviews', 'id')->where(function (Builder $query) {
                                     return $query->where('deleted_at',null);
                               })],
@@ -41,8 +41,8 @@ class BookReviewValidator
         ]);
     }
 
-    public function validationForUpdate($request){
-        return Validator::make($request,[
+    public function validationForUpdate($data){
+        return Validator::make($data,[
             'bookReview_id' => ['required', Rule::exists('book_reviews', 'id')->where(function (Builder $query) {
                                     return $query->where('deleted_at',null);
                               })],

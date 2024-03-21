@@ -8,8 +8,16 @@ use Illuminate\Support\Facades\Validator;
 
 class BookValidator
 {
-    public function bookShowValidator($request){
-        return Validator::make($request,[
+    public function bookPageValidator($data){
+        return Validator::make($data,[
+            'page' => 'required',
+            'paginateBy' => 'required'
+        ]);
+    }
+
+
+    public function bookShowValidator($data){
+        return Validator::make($data,[
             'book_id' => ['required', Rule::exists('books', 'id')->where(function (Builder $query) {
                             return $query->where('deleted_at',null);
                         })]
@@ -17,9 +25,9 @@ class BookValidator
     }
 
 
-    public function bookCreateValidation($request){
+    public function bookCreateValidation($data){
 
-        return Validator::make($request,[
+        return Validator::make($data,[
             'ISBN' => 'required|unique:books,ISBN',
             'author' => 'required',
             'title' => 'required',
@@ -29,9 +37,9 @@ class BookValidator
     }
 
 
-    public function bookDeleteValidation($request){
+    public function bookDeleteValidation($data){
 
-        return Validator::make($request,[
+        return Validator::make($data,[
             'book_id' => ['required', Rule::exists('books', 'id')->where(function (Builder $query) {
                             return $query->where('deleted_at',null);
                         })]
@@ -39,10 +47,10 @@ class BookValidator
     }
 
 
-    public function bookUpdateValidation($request){
+    public function bookUpdateValidation($data){
 
-        $book_id = isset($request['book_id'])? $request['book_id']:'';
-        return Validator::make($request,[
+        $book_id = isset($data['book_id'])? $data['book_id']:'';
+        return Validator::make($data,[
             'book_id' => ['required', Rule::exists('books', 'id')->where(function (Builder $query) {
                             return $query->where('deleted_at',null);
                         })],
