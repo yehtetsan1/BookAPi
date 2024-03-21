@@ -8,6 +8,15 @@ use Illuminate\Support\Facades\Validator;
 
 class BookValidator
 {
+    public function bookShowValidator($request){
+        return Validator::make($request,[
+            'book_id' => ['required', Rule::exists('books', 'id')->where(function (Builder $query) {
+                            return $query->where('deleted_at',null);
+                        })]
+        ],['book_id.exists' => 'Book Not Found']);
+    }
+
+
     public function bookCreateValidation($request){
 
         return Validator::make($request,[
@@ -32,11 +41,12 @@ class BookValidator
 
     public function bookUpdateValidation($request){
 
+        $book_id = isset($request['book_id'])? $request['book_id']:'';
         return Validator::make($request,[
             'book_id' => ['required', Rule::exists('books', 'id')->where(function (Builder $query) {
                             return $query->where('deleted_at',null);
                         })],
-            'ISBN' => 'required|unique:books,ISBN,'.$request['book_id'],
+            'ISBN' => 'required|unique:books,ISBN,'.$book_id,
             'author' => 'required',
             'title' => 'required',
             'price' => 'required',

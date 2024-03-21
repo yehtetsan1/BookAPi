@@ -46,16 +46,12 @@ class OrderController extends BaseController
         if(isset($data['order_id'])){
             $responseData = Order::where('id',$data['order_id'])
                                     ->with([
-                                        'details' => function($query){
-                                            $query->orderBy('updated_at','desc');
-                                            }
+                                        'details' => function($query){$query->orderBy('updated_at','desc');}
                                         ])
                                     ->get();
         }else{
             $responseData = Order::with([
-                                        'details' => function($query){
-                                            $query->orderBy('updated_at','desc');
-                                            }
+                                        'details' => function($query){$query->orderBy('updated_at','desc');}
                                         ])
                                     ->get();
         }

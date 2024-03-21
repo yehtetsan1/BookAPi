@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\BookReview;
 use Illuminate\Http\Request;
 use App\Validators\BookReviewValidator;
+use App\Http\Resources\BookReviewResource;
 use App\Http\Controllers\Base\BaseController as BaseController;
 
 class BookReviewController extends BaseController
@@ -33,16 +34,32 @@ class BookReviewController extends BaseController
         if(isset($data['book_id'])){
             $bookReviewList = BookReview::where('book_id',$data['book_id']);
         }
-        elseif(isset($data['bookReview_id'])){
-            $bookReviewList = BookReview::where('id',$data['bookReview_id']);
-        }
         else{
             $bookReviewList = BookReview::query();
         }
 
         $bookReviewList = $bookReviewList->orderBy('updated_at','desc')->get();
 
+        $bookReviewList = BookReviewResource::collection($bookReviewList);
+
         return $this->sendResponse($bookReviewList,'Book Reviews',$bookReviewList->count());
+    }
+
+    public function show(Request $request){
+
+        $data = $this->getData($request);
+
+        $validator = $this->bookReviewValidator->bookReviewShowValidator($data);
+
+        if($validator->fails()){
+            return $this->sendError('Cannot Show BookReview',$validator->errors());
+        }
+
+        $bookReview = BookReview::where('id',$data['bookReview_id'])->get();
+
+        $bookReview = BookReviewResource::collection($bookReview);
+
+        return $this->sendResponse($bookReview,'Book Reviews');
     }
 
 
@@ -56,11 +73,11 @@ class BookReviewController extends BaseController
           return $this->sendError('Cannot Create Book Review!',$validator->errors());
         }
 
-        $dataToCreate = $validator->validated();
+        $attributes = $validator->validated();
 
-        $createdReview = BookReview::create($dataToCreate);
+        $bookReview = BookReview::create($attributes);
 
-        return $this->sendResponse($createdReview,'Book Review Created');
+        return $this->sendResponse($bookReview,'Book Review Created');
     }
 
 
@@ -90,14 +107,14 @@ class BookReviewController extends BaseController
             return $this->sendError('Cannot Update Book Review!',$validator->errors());
         }
 
-        $dataToUpdate = $validator->validated();
+        $attributes = $validator->validated();
 
-        $dataToUpdate = collect($dataToUpdate)->except('bookReview_id')->toArray();
+        $attributes = collect($attributes)->except('bookReview_id')->toArray();
 
-        $updatedBookReview = BookReview::find($data['bookReview_id']);
+        $bookReview = BookReview::find($data['bookReview_id']);
 
-        $updatedBookre->update($dataToUpdate)-git();
+        $bookReview->update($attributes);
 
-        return $this->sendResponse($updatedBookReview,'Book Review Updated');
+        return $this->sendResponse($bookReview,'Book Review Updated');
     }
 }
